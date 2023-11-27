@@ -49,8 +49,9 @@ class Training:
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        raise AttributeError('Method \'get_spent_calories\''
-                             'available only in subclasses')
+        raise NotImplementedError('Method \'get_spent_calories\''
+                                  f'not implemented in {type(self).__name__},'
+                                  ' available only in subclasses')
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -70,10 +71,10 @@ class Running(Training):
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        minutes: float = self.duration * self.MIN_IN_HOUR
+        duration_in_minutes: float = self.duration * self.MIN_IN_HOUR
         return ((self.CALORIES_MEAN_SPEED_MULTIPLIER * self.get_mean_speed()
                  + self.CALORIES_MEAN_SPEED_SHIFT)
-                * self.weight / self.M_IN_KM * minutes
+                * self.weight / self.M_IN_KM * duration_in_minutes
                 )
 
 
@@ -88,14 +89,14 @@ class SportsWalking(Training):
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        minutes: float = self.duration * self.MIN_IN_HOUR
+        duration_in_minutes: float = self.duration * self.MIN_IN_HOUR
         mean_speed_met_per_sec: float = (self.get_mean_speed()
                                          * self.METERS_IN_SECOND)
         height_in_m: float = self.height / self.CENTIMETERS_IN_METER
         return ((self.CALORIES_MEAN_SPEED_MULTIPLIER * self.weight
                  + (mean_speed_met_per_sec ** 2 / height_in_m)
                  * self.CALORIES_MEAN_SPEED_SHIFT * self.weight)
-                * minutes
+                * duration_in_minutes
                 )
 
 
@@ -104,14 +105,15 @@ class Swimming(Training):
     """Тренировка: плавание."""
     length_pool: float  # длина бассейна в метрах
     count_pool: int  # кол-во переплыл басик
-    LEN_STEP = 1.38
-    FOR_CALC_CALORIES_1 = 1.1
-    FOR_CALC_CALORIES_2 = 2.0
+    LEN_STEP = 1.38  # длина гребка
+    CALORIES_MEAN_SPEED_SHIFT = 1.1
+    CALORIES_MEAN_SPEED_MULTIPLIER = 2.0
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        return ((self.get_mean_speed() + self.FOR_CALC_CALORIES_1)
-                * self.FOR_CALC_CALORIES_2 * self.weight * self.duration
+        return ((self.get_mean_speed() + self.CALORIES_MEAN_SPEED_SHIFT)
+                * self.CALORIES_MEAN_SPEED_MULTIPLIER
+                * self.weight * self.duration
                 )
 
     def get_mean_speed(self) -> float:
@@ -130,10 +132,10 @@ def read_package(workout_type: str, data: list[int]) -> Training:
         'WLK': SportsWalking,
     }
     if workout_type not in workout_classes:
-        available_keys = ', '.join(workout_classes.keys())
-        raise KeyError(f'wrong key - \'{workout_type}\'. '
-                       f'\'workout_classes\' only accepts keys: '
-                       f'{available_keys}')
+        available_keys = ', '.join(workout_classes)
+        raise ValueError('invalid argument for read_package(): '
+                         f'\'{workout_type}\'. Function only accepts values: '
+                         f'{available_keys}')
     return workout_classes[workout_type](*data)
 
 
